@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"doubleblind/server"
+	"fmt"
 )
 
 func main() {
