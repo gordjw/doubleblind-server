@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"doubleblind/models"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,7 +18,7 @@ type Env struct {
 	participants	models.ParticipantModel
 }
 
-func Run() {	
+func Run(host string, port int) {	
 	db, err := sql.Open("sqlite3", "./doubleblind.db")
 
 	if err != nil {
@@ -36,6 +37,11 @@ func Run() {
 	if err != nil {
 		log.Fatal("Error setting up DB: ", err)
 	}
+	err = env.options.Setup()
+	if err != nil {
+		log.Fatal("Error setting up DB: ", err)
+	}
+
 
 	mux := http.NewServeMux()
 
@@ -58,23 +64,25 @@ func Run() {
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Start the server and listen on port 80
-	log.Fatal(http.ListenAndServe(":8090", mux))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), mux))
 }
 
 func (env *Env) handleRoot		(w http.ResponseWriter, r *http.Request) { 
 	experiments, err := env.experiments.All()
 	if err != nil {
 		log.Print(err)
-		http.Error(w, http.StatusText(500), 500)
-		return
+		w.WriteHeader(500)
 	}
 
-	for _, e := range experiments {
-		fmt.Fprint(w, fmt.Sprintf("%s\n", e.Prompt));
-	}
-
-	fmt.Fprint(w, fmt.Sprintf("Viewed homepage")); 
 	fmt.Println("Viewed homepage") 
+
+	output, err := json.Marshal(experiments)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(500)
+	}
+
+	w.Write(output)
 }
 func getExperiment	(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Viewed experiment")); fmt.Println("Viewed experiment") }
 func postExperiment	(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Created new experiment")); fmt.Println("Created new experiment") }
