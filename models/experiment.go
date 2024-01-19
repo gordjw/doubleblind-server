@@ -22,8 +22,8 @@ func (e Experiment) winner() (Option, int) {
 	var winner Option
 
 	for i := 0; i < len(e.Options); i++ {
-		if e.Options[i].votes > max {
-			max = e.Options[i].votes
+		if e.Options[i].Votes > max {
+			max = e.Options[i].Votes
 			winner = e.Options[i]
 		}
 	}
@@ -37,7 +37,7 @@ func (e Experiment) isOpen() (bool) {
 	totalVotes := 0
 
 	for i := 0; i < len(e.Options); i++ {
-		totalVotes += e.Options[i].votes
+		totalVotes += e.Options[i].Votes
 	}
 
 	if totalVotes < len(e.Participants) {
