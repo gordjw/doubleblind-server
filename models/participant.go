@@ -1,7 +1,7 @@
 package models
 
 import(
-	"fmt"
+	"log"
 	"database/sql"
 )
 
@@ -16,28 +16,28 @@ type ParticipantModel struct {
 }
 
 
-func (p ParticipantModel) One(id int) (Participant, error) {
+func (p ParticipantModel) One(id int) (*Participant, error) {
 	row := p.DB.QueryRow(`SELECT id, name, email FROM Participant WHERE id = ?`, id)
 
 	var participant Participant
 
 	err := row.Scan(&participant.Id, &participant.Name, &participant.Email)
 	if err != nil {
-		fmt.Println("Error in ParticipantModel.One(%d): %v", id, err)
-		return participant, err
+		log.Println("Error in ParticipantModel.One(%d): %v", id, err)
+		return nil, err
 	}
 
-	return participant, nil
+	return &participant, nil
 }
 
 
-func (p ParticipantModel) AttachedToExperiment(id int) ([]Participant, error) {
+func (p ParticipantModel) AttachedToExperiment(id int) (*[]Participant, error) {
 	var participants []Participant
 
 	rows, err := p.DB.Query(`SELECT id, name, email FROM Participant WHERE experiment_id = ?`, id)
 	if err != nil {
-		fmt.Println("Error in ParticipantModel.AttachedToExperiment(%d): %v", id, err)
-		return participants, err
+		log.Println("Error in ParticipantModel.AttachedToExperiment(%d): %v", id, err)
+		return nil, err
 	}
 	
 	for rows.Next() {
@@ -45,14 +45,14 @@ func (p ParticipantModel) AttachedToExperiment(id int) ([]Participant, error) {
 
 		err := rows.Scan( &participant.Id, &participant.Name, &participant.Email )
 		if err != nil {
-			fmt.Println("Error in ParticipantModel.AttachedToExperiment(%d): %v", id, err)
+			log.Println("Error in ParticipantModel.AttachedToExperiment(%d): %v", id, err)
 			return nil, err
 		}
 
 		participants = append(participants, participant)
 	}
 
-	return participants, nil
+	return &participants, nil
 }
 
 

@@ -1,7 +1,7 @@
 package models
 
 import(
-	"fmt"
+	"log"
 	"database/sql"
 )
 
@@ -16,7 +16,7 @@ type OptionModel struct {
 }
 
 
-func (o OptionModel) All() ([]Option, error) {
+func (o OptionModel) All() (*[]Option, error) {
 	rows, err := o.DB.Query("SELECT * FROM Option")
 	if err != nil {
 		return nil, err
@@ -40,17 +40,17 @@ func (o OptionModel) All() ([]Option, error) {
 		return nil, err
 	}
 
-	return options, nil
+	return &options, nil
 }
 
 
-func (o OptionModel) AttachedToExperiment(id int) ([]Option, error) {
+func (o OptionModel) AttachedToExperiment(id int) (*[]Option, error) {
 	var options []Option
 
 	rows, err := o.DB.Query(`SELECT id, value, votes FROM Option WHERE experiment_id = ?`, id)
 	if err != nil {
-		fmt.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
-		return options, err
+		log.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
+		return nil, err
 	}
 	
 	for rows.Next() {
@@ -58,14 +58,14 @@ func (o OptionModel) AttachedToExperiment(id int) ([]Option, error) {
 
 		err := rows.Scan( &option.Id, &option.Value, &option.Votes )
 		if err != nil {
-			fmt.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
+			log.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
 			return nil, err
 		}
 
 		options = append(options, option)
 	}
 
-	return options, nil
+	return &options, nil
 }
 
 

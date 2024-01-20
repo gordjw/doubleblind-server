@@ -1,7 +1,7 @@
 package models
 
 import(
-	"fmt"
+	"log"
 	"database/sql"
 )
 
@@ -10,13 +10,14 @@ type Experiment struct {
 	Prompt string
 	Options []Option
 	Participants []Participant
+	OrganiserId int
 	Organiser Participant
 }
 
 type ExperimentModel struct {
 	DB *sql.DB
-	OptionsModel *OptionModel
-	ParticipantsModel *ParticipantModel
+	OptionModel *OptionModel
+	ParticipantModel *ParticipantModel
 }
 
 // Returns the winning Option and the number of votes it received
@@ -50,9 +51,10 @@ func (e Experiment) isOpen() (bool) {
 	return false
 }
 
-func (e ExperimentModel) All() ([]Experiment, error) {
-	rows, err := e.DB.Query("SELECT * FROM Experiment")
+func (e ExperimentModel) All() (*[]Experiment, error) {
+	rows, err := e.DB.Query("SELECT id, prompt, organiserId FROM Experiment")
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -62,10 +64,32 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 	for rows.Next() {
 		var experiment Experiment
 
-		err := rows.Scan(&experiment.Id, &experiment.Prompt)
+		err := rows.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
+
+		options, err := e.OptionModel.AttachedToExperiment(experiment.Id)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		experiment.Options = *options
+	
+		participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		experiment.Participants = *participants
+	
+		organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		experiment.Organiser = *organiser
 
 		experiments = append(experiments, experiment)
 	}
@@ -74,58 +98,52 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 		return nil, err
 	}
 
-	return experiments, nil
+	return &experiments, nil
 }
 
 
-func (e ExperimentModel) One(id int) (Experiment, error) {
-	row := e.DB.QueryRow(`SELECT * FROM Experiment WHERE id = ?`, id)
+func (e ExperimentModel) One(id int) (*Experiment, error) {
+	row := e.DB.QueryRow(`SELECT id, prompt, organiserId FROM Experiment WHERE id = ?`, id)
 
 	var experiment Experiment
 
-	err := row.Scan(&experiment.Id, &experiment.Prompt)
+	err := row.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId)
 	if err != nil {
-		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
-		return experiment, err
+		log.Println(err)
+		return nil, err
 	}
 
-	options, err := e.OptionsModel.AttachedToExperiment(id)
+	options, err := e.OptionModel.AttachedToExperiment(experiment.Id)
 	if err != nil {
-		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
-		return experiment, err
+		log.Println(err)
+		return nil, err
 	}
+	experiment.Options = *options
 
-	experiment.Options = options
-
-	participants, err := e.ParticipantsModel.AttachedToExperiment(id)
+	participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
 	if err != nil {
-		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
-		return experiment, err
+		log.Println(err)
+		return nil, err
 	}
+	experiment.Participants = *participants
 
-	experiment.Participants = participants
-
-	
-	// TODO: This is hardcoded to "1" now. 
-	// The Experiment type needs to be updated to hold the Participant ID of the organiser, which would be used in this call to ParticipantsModel.One(id)
-	organiser, err := e.ParticipantsModel.One(1)
+	organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
 	if err != nil {
-		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
-		return experiment, err
+		log.Println(err)
+		return nil, err
 	}
-	experiment.Organiser = organiser
+	experiment.Organiser = *organiser
 
-
-	return experiment, nil
+	return &experiment, nil
 }
-
 
 func (e ExperimentModel) Setup() error {
 	_, err := e.DB.Exec(`
 		DROP TABLE IF EXISTS Experiment;
 		CREATE TABLE Experiment (
 			id				INTEGER PRIMARY KEY AUTOINCREMENT,
-			prompt			VARCHAR(128) NOT NULL
+			prompt			VARCHAR(128) NOT NULL,
+			organiserId		INTEGER NOT NULL
 		);
 	`)
 	if err != nil {
@@ -133,7 +151,7 @@ func (e ExperimentModel) Setup() error {
 	}
 
 	_, err = e.DB.Exec(`
-		INSERT INTO Experiment (prompt) VALUES('Where do you want to go to dinner?')
+		INSERT INTO Experiment (prompt, organiserId) VALUES('Where do you want to go to dinner?', '1')
 	`)
 	if err != nil {
 		return err

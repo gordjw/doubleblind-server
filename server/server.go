@@ -20,6 +20,10 @@ type Env struct {
 
 func Run(host string, port int) {	
 
+	// Logger setup
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+
 	// Database setup
 	db, err := sql.Open("sqlite3", "./doubleblind.db")
 
@@ -29,15 +33,25 @@ func Run(host string, port int) {
 	defer os.Remove("./doubleblind.db")
 	defer db.Close()
 
-	env := &Env {
-		experiments:	models.ExperimentModel{DB: db},
-		options:		models.OptionModel{DB: db},
-		participants:	models.ParticipantModel{DB: db},
+	options := models.OptionModel{
+		DB: db, 
 	}
 
-	// This feels wrong, but I can't explain why
-	env.experiments.OptionsModel = &env.options
-	env.experiments.ParticipantsModel = &env.participants
+	participants := models.ParticipantModel{
+		DB: db,
+	}
+
+	experiments := models.ExperimentModel{
+		DB: db,
+		OptionModel: &options,
+		ParticipantModel: &participants,
+	}
+
+	env := &Env {
+		experiments:	experiments,
+		options:		options,
+		participants:	participants,
+	}
 
 	err = env.experiments.Setup()
 	if err != nil {
