@@ -1,6 +1,7 @@
 package models
 
 import(
+	"fmt"
 	"database/sql"
 )
 
@@ -75,6 +76,43 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 }
 
 
+func (e ExperimentModel) One(id int) (Experiment, error) {
+	row := e.DB.QueryRow(`SELECT * FROM Experiment WHERE id = ?`, id)
+
+	var experiment Experiment
+
+	err := row.Scan(&experiment.Id, &experiment.Prompt)
+	if err != nil {
+		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
+		return experiment, err
+	}
+
+	rows, err := e.DB.Query(`SELECT id, value, votes FROM Option WHERE experiment_id = ?`, id)
+	if err != nil {
+		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
+		return experiment, err
+	}
+
+	var options []Option
+
+	for rows.Next() {
+		var option Option
+
+		err := rows.Scan( &option.Id, &option.Value, &option.Votes )
+		if err != nil {
+			fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
+			return experiment, err
+		}
+
+		options = append(options, option)
+	}
+
+	experiment.Options = options
+
+	return experiment, nil
+}
+
+
 func (e ExperimentModel) Setup() error {
 	_, err := e.DB.Exec(`
 		DROP TABLE IF EXISTS Experiment;
@@ -95,5 +133,4 @@ func (e ExperimentModel) Setup() error {
 	}
 
 	return nil
-
 }

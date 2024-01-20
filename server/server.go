@@ -53,10 +53,10 @@ func Run(host string, port int) {
 	post	/experiment/:id/vote/:id	(vote for an option)
 	*/
 	
-	mux.HandleFunc("/experiment/{experiment_id}/vote/{option_id}", postVote)
-	mux.HandleFunc("/experiment/{experiment_id}/option", postOption)
-	mux.HandleFunc("/experiment/{experiment_id}", getExperiment)
-	mux.HandleFunc("/experiment", postExperiment)
+	mux.HandleFunc("/experiment/{experiment_id}/vote/{option_id}", env.postVote)
+	mux.HandleFunc("/experiment/{experiment_id}/option", env.postOption)
+	mux.HandleFunc("/experiment/{experiment_id}", env.getExperiment)
+	mux.HandleFunc("/experiment", env.postExperiment)
 	mux.HandleFunc("/", env.handleRoot)
 
 	// Serve static files
@@ -84,10 +84,27 @@ func (env *Env) handleRoot		(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(output)
 }
-func getExperiment	(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Viewed experiment")); fmt.Println("Viewed experiment") }
-func postExperiment	(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Created new experiment")); fmt.Println("Created new experiment") }
-func postVote		(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Voted for option")); fmt.Println("Voted for option") }
-func postOption		(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Created new option")); fmt.Println("Created new option") }
+func (env *Env) getExperiment	(w http.ResponseWriter, r *http.Request) { 
+	experiment, err := env.experiments.One(1)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(500)
+	}
+
+	fmt.Println("Viewed experiment") 
+
+	output, err := json.Marshal(experiment)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(500)
+	}
+
+	w.Write(output)
+
+}
+func (env *Env) postExperiment	(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Created new experiment")); fmt.Println("Created new experiment") }
+func (env *Env) postVote		(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Voted for option")); fmt.Println("Voted for option") }
+func (env *Env) postOption		(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, fmt.Sprintf("Created new option")); fmt.Println("Created new option") }
 
 
 
