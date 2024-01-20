@@ -1,6 +1,7 @@
 package models
 
 import(
+	"fmt"
 	"database/sql"
 )
 
@@ -37,6 +38,31 @@ func (o OptionModel) All() ([]Option, error) {
 
 	if err = rows.Err(); err != nil {
 		return nil, err
+	}
+
+	return options, nil
+}
+
+
+func (o OptionModel) AttachedToExperiment(id int) ([]Option, error) {
+	var options []Option
+
+	rows, err := o.DB.Query(`SELECT id, value, votes FROM Option WHERE experiment_id = ?`, id)
+	if err != nil {
+		fmt.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
+		return options, err
+	}
+	
+	for rows.Next() {
+		var option Option
+
+		err := rows.Scan( &option.Id, &option.Value, &option.Votes )
+		if err != nil {
+			fmt.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
+			return nil, err
+		}
+
+		options = append(options, option)
 	}
 
 	return options, nil

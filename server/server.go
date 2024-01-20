@@ -19,6 +19,8 @@ type Env struct {
 }
 
 func Run(host string, port int) {	
+
+	// Database setup
 	db, err := sql.Open("sqlite3", "./doubleblind.db")
 
 	if err != nil {
@@ -33,6 +35,10 @@ func Run(host string, port int) {
 		participants:	models.ParticipantModel{DB: db},
 	}
 
+	// This feels wrong, but I can't explain why
+	env.experiments.OptionsModel = &env.options
+	env.experiments.ParticipantsModel = &env.participants
+
 	err = env.experiments.Setup()
 	if err != nil {
 		log.Fatal("Error setting up DB: ", err)
@@ -41,9 +47,14 @@ func Run(host string, port int) {
 	if err != nil {
 		log.Fatal("Error setting up DB: ", err)
 	}
+	err = env.participants.Setup()
+	if err != nil {
+		log.Fatal("Error setting up DB: ", err)
+	}
 
 
-	mux := http.NewServeMux()
+
+	// Multiplexer setup
 
 	/**
 	get		/							(show homepage)
@@ -52,16 +63,14 @@ func Run(host string, port int) {
 	post	/experiment/:id/option		(create a new option for this experiment)
 	post	/experiment/:id/vote/:id	(vote for an option)
 	*/
+
+	mux := http.NewServeMux()
 	
 	mux.HandleFunc("/experiment/{experiment_id}/vote/{option_id}", env.postVote)
 	mux.HandleFunc("/experiment/{experiment_id}/option", env.postOption)
 	mux.HandleFunc("/experiment/{experiment_id}", env.getExperiment)
 	mux.HandleFunc("/experiment", env.postExperiment)
 	mux.HandleFunc("/", env.handleRoot)
-
-	// Serve static files
-	fs := http.FileServer(http.Dir("static/"))
-	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Start the server and listen on port 80
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), mux))
@@ -84,6 +93,8 @@ func (env *Env) handleRoot		(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(output)
 }
+
+
 func (env *Env) getExperiment	(w http.ResponseWriter, r *http.Request) { 
 	experiment, err := env.experiments.One(1)
 	if err != nil {

@@ -15,6 +15,8 @@ type Experiment struct {
 
 type ExperimentModel struct {
 	DB *sql.DB
+	OptionsModel *OptionModel
+	ParticipantsModel *ParticipantModel
 }
 
 // Returns the winning Option and the number of votes it received
@@ -87,27 +89,32 @@ func (e ExperimentModel) One(id int) (Experiment, error) {
 		return experiment, err
 	}
 
-	rows, err := e.DB.Query(`SELECT id, value, votes FROM Option WHERE experiment_id = ?`, id)
+	options, err := e.OptionsModel.AttachedToExperiment(id)
 	if err != nil {
 		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
 		return experiment, err
 	}
 
-	var options []Option
+	experiment.Options = options
 
-	for rows.Next() {
-		var option Option
-
-		err := rows.Scan( &option.Id, &option.Value, &option.Votes )
-		if err != nil {
-			fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
-			return experiment, err
-		}
-
-		options = append(options, option)
+	participants, err := e.ParticipantsModel.AttachedToExperiment(id)
+	if err != nil {
+		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
+		return experiment, err
 	}
 
-	experiment.Options = options
+	experiment.Participants = participants
+
+	
+	// TODO: This is hardcoded to "1" now. 
+	// The Experiment type needs to be updated to hold the Participant ID of the organiser, which would be used in this call to ParticipantsModel.One(id)
+	organiser, err := e.ParticipantsModel.One(1)
+	if err != nil {
+		fmt.Println("Error in ExperimentModel.One(%d): %v", id, err)
+		return experiment, err
+	}
+	experiment.Organiser = organiser
+
 
 	return experiment, nil
 }
