@@ -8,7 +8,6 @@ import(
 type Option struct {
 	Id int
 	Value string
-	Votes int
 }
 
 type OptionModel struct {
@@ -28,7 +27,7 @@ func (o OptionModel) All() (*[]Option, error) {
 	for rows.Next() {
 		var option Option
 
-		err := rows.Scan(&option.Id, &option.Value, &option.Votes)
+		err := rows.Scan(&option.Id, &option.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +46,7 @@ func (o OptionModel) All() (*[]Option, error) {
 func (o OptionModel) AttachedToExperiment(id int) (*[]Option, error) {
 	var options []Option
 
-	rows, err := o.DB.Query(`SELECT id, value, votes FROM Option WHERE experiment_id = ?`, id)
+	rows, err := o.DB.Query(`SELECT id, value FROM Option WHERE experiment_id = ?`, id)
 	if err != nil {
 		log.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
 		return nil, err
@@ -56,7 +55,7 @@ func (o OptionModel) AttachedToExperiment(id int) (*[]Option, error) {
 	for rows.Next() {
 		var option Option
 
-		err := rows.Scan( &option.Id, &option.Value, &option.Votes )
+		err := rows.Scan( &option.Id, &option.Value )
 		if err != nil {
 			log.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
 			return nil, err
@@ -77,7 +76,6 @@ func (o OptionModel) Setup() error {
 			id				INTEGER PRIMARY KEY AUTOINCREMENT,
 			experiment_id	INTEGER NOT NULL,
 			value			VARCHAR(128) NOT NULL,
-			votes			INTEGER NOT NULL,
 			FOREIGN KEY (experiment_id)
 				REFERENCES Experiment(id)
 				ON DELETE CASCADE
@@ -88,7 +86,7 @@ func (o OptionModel) Setup() error {
 	}
 
 	_, err = o.DB.Exec(`
-		INSERT INTO Option (experiment_id, value, votes) VALUES ('1', 'Two Blind Mice', '0'), ('1', 'CBD Dumplings', '0'), ('1', 'Asian Cafe', '0')
+		INSERT INTO Option (experiment_id, value) VALUES ('1', 'Two Blind Mice'), ('1', 'CBD Dumplings'), ('1', 'Asian Cafe')
 	`)
 	if err != nil {
 		return err

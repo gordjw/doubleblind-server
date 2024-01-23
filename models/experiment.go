@@ -12,12 +12,14 @@ type Experiment struct {
 	Participants []Participant
 	OrganiserId int
 	Organiser Participant
+	Votes []Vote
 }
 
 type ExperimentModel struct {
 	DB *sql.DB
 	OptionModel *OptionModel
 	ParticipantModel *ParticipantModel
+	VoteModel *VoteModel
 }
 
 // Returns the winning Option and the number of votes it received
@@ -25,12 +27,12 @@ func (e Experiment) winner() (Option, int) {
 	max := 0
 	var winner Option
 
-	for i := 0; i < len(e.Options); i++ {
-		if e.Options[i].Votes > max {
-			max = e.Options[i].Votes
-			winner = e.Options[i]
-		}
-	}
+	// for i := 0; i < len(e.Options); i++ {
+	// 	if e.Options[i].Votes > max {
+	// 		max = e.Options[i].Votes
+	// 		winner = e.Options[i]
+	// 	}
+	// }
 
 	return winner, max
 }
@@ -38,17 +40,7 @@ func (e Experiment) winner() (Option, int) {
 
 // Returns true if the Experiment is waiting on 1 or more Participants to vote
 func (e Experiment) isOpen() (bool) {
-	totalVotes := 0
-
-	for i := 0; i < len(e.Options); i++ {
-		totalVotes += e.Options[i].Votes
-	}
-
-	if totalVotes < len(e.Participants) {
-		return true
-	}
-
-	return false
+	return true
 }
 
 func (e ExperimentModel) All() (*[]Experiment, error) {
@@ -133,6 +125,13 @@ func (e ExperimentModel) One(id int) (*Experiment, error) {
 		return nil, err
 	}
 	experiment.Organiser = *organiser
+
+	votes, err := e.VoteModel.AttachedToExperiment(experiment.Id)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	experiment.Votes = *votes
 
 	return &experiment, nil
 }
