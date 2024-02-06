@@ -1,14 +1,14 @@
 package models
 
-import(
+import (
 	// "log"
 	"database/sql"
 )
 
 type Vote struct {
-	ExperimentId int
-	OptionId int
-	ParticpantId int
+	ExperimentId string
+	OptionId     string
+	ParticpantId string
 }
 
 type VoteModel struct {
@@ -21,11 +21,11 @@ func (v VoteModel) VoteFor(exp_id int, opt_id int, par_id int) error {
 	return nil
 }
 
-func (v VoteModel) AttachedToExperiment(exp_id int) (*[]Vote, error) {
+func (v VoteModel) AttachedToExperiment(exp_id string) ([]Vote, error) {
 	var votes []Vote
 	// err := v.DB.Query(`INSERT INTO Vote `)
 
-	return &votes, nil
+	return votes, nil
 }
 
 func (v VoteModel) Setup() error {

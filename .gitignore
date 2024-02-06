@@ -1,4 +1,5 @@
 # Binaries for programs and plugins
+doubleblind
 *.exe
 *.exe~
 *.dll
@@ -20,3 +21,4 @@ go.work
 # Local databases
 *.db
 *.db-journal
+
