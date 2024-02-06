@@ -1,25 +1,25 @@
 package models
 
-import(
-	"log"
+import (
 	"database/sql"
+	"log"
 )
 
 type Experiment struct {
-	Id int
-	Prompt string
-	Options []Option
+	Id           string
+	Prompt       string
+	Options      []Option
 	Participants []Participant
-	OrganiserId int
-	Organiser Participant
-	Votes []Vote
+	OrganiserId  string
+	Organiser    Participant
+	Votes        []Vote
 }
 
 type ExperimentModel struct {
-	DB *sql.DB
-	OptionModel *OptionModel
+	DB               *sql.DB
+	OptionModel      *OptionModel
 	ParticipantModel *ParticipantModel
-	VoteModel *VoteModel
+	VoteModel        *VoteModel
 }
 
 // Returns the winning Option and the number of votes it received
@@ -37,13 +37,12 @@ func (e Experiment) winner() (Option, int) {
 	return winner, max
 }
 
-
 // Returns true if the Experiment is waiting on 1 or more Participants to vote
-func (e Experiment) isOpen() (bool) {
+func (e Experiment) isOpen() bool {
 	return true
 }
 
-func (e ExperimentModel) All() (*[]Experiment, error) {
+func (e ExperimentModel) All() ([]Experiment, error) {
 	rows, err := e.DB.Query("SELECT id, prompt, organiserId FROM Experiment")
 	if err != nil {
 		log.Println(err)
@@ -67,21 +66,21 @@ func (e ExperimentModel) All() (*[]Experiment, error) {
 			log.Println(err)
 			return nil, err
 		}
-		experiment.Options = *options
-	
+		experiment.Options = options
+
 		participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		experiment.Participants = *participants
-	
+		experiment.Participants = participants
+
 		organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		experiment.Organiser = *organiser
+		experiment.Organiser = organiser
 
 		experiments = append(experiments, experiment)
 	}
@@ -90,11 +89,10 @@ func (e ExperimentModel) All() (*[]Experiment, error) {
 		return nil, err
 	}
 
-	return &experiments, nil
+	return experiments, nil
 }
 
-
-func (e ExperimentModel) One(id int) (*Experiment, error) {
+func (e ExperimentModel) One(id string) (Experiment, error) {
 	row := e.DB.QueryRow(`SELECT id, prompt, organiserId FROM Experiment WHERE id = ?`, id)
 
 	var experiment Experiment
@@ -102,38 +100,38 @@ func (e ExperimentModel) One(id int) (*Experiment, error) {
 	err := row.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return Experiment{}, err
 	}
 
 	options, err := e.OptionModel.AttachedToExperiment(experiment.Id)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return Experiment{}, err
 	}
-	experiment.Options = *options
+	experiment.Options = options
 
 	participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return Experiment{}, err
 	}
-	experiment.Participants = *participants
+	experiment.Participants = participants
 
 	organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return Experiment{}, err
 	}
-	experiment.Organiser = *organiser
+	experiment.Organiser = organiser
 
 	votes, err := e.VoteModel.AttachedToExperiment(experiment.Id)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return Experiment{}, err
 	}
-	experiment.Votes = *votes
+	experiment.Votes = votes
 
-	return &experiment, nil
+	return experiment, nil
 }
 
 func (e ExperimentModel) Setup() error {
