@@ -78,66 +78,40 @@ func Run(host string, port int) {
 		log.Fatal("Error setting up DB: ", err)
 	}
 
+	/**
+	 *  Setting up the API Router and routes
+	 */
 	apiRouter := chi.NewRouter()
-	apiRouter.Post("/experiment/{experiment_id}/vote/{option_id}", env.postVote)
+	apiRouter.Use(middlewareAuth)
+	apiRouter.Use(middlewareJSONResponse)
+
+	apiRouter.Get("/experiment", env.getExperiments)
+	apiRouter.Get("/experiment/{experiment_id}", env.getExperiment)
 	apiRouter.Post("/experiment", env.postExperiment)
 
+	apiRouter.Post("/experiment/{experiment_id}/vote/{option_id}", env.postVote)
+
+	/**
+	 *  Setting up the Main Router and routes
+	 */
 	r := chi.NewRouter()
-	r.Get("/experiment/{experiment_id}", env.getExperiment)
-	r.Get("/", env.handleRoot)
+	r.Use(middlewareCORS)
+	r.Use(middlewareLogger)
+
+	r.Handle("/", http.FileServer(http.Dir("./public")))
 
 	r.Mount("/api", apiRouter)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), r))
 }
 
-func (env *Env) handleRoot(w http.ResponseWriter, r *http.Request) {
-	experiments, err := env.experiments.All()
+func jsonResponse(output any, w http.ResponseWriter) {
+	bytes, err := json.Marshal(output)
 	if err != nil {
 		log.Println(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	output, err := json.Marshal(experiments)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-	}
-
-	w.Write(output)
-}
-
-func (env *Env) getExperiment(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "experiment_id")
-	experiment, err := env.experiments.One(id)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-	}
-
-	output, err := json.Marshal(experiment)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-	}
-
-	w.Write(output)
-}
-
-func (env *Env) postExperiment(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
-	fmt.Println(r.Body)
-
-	fmt.Fprint(w, fmt.Sprintf("Created new experiment"))
-	fmt.Println("Created new experiment")
-}
-
-func (env *Env) postVote(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, fmt.Sprintf("Voted for option"))
-	fmt.Println("Voted for option")
-}
-
-func (env *Env) postOption(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, fmt.Sprintf("Created new option"))
-	fmt.Println("Created new option")
+	w.WriteHeader(http.StatusOK)
+	w.Write(bytes)
 }

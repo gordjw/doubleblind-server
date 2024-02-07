@@ -46,7 +46,7 @@ func (o OptionModel) AttachedToExperiment(id string) ([]Option, error) {
 
 	rows, err := o.DB.Query(`SELECT id, value FROM Option WHERE experiment_id = ?`, id)
 	if err != nil {
-		log.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
+		log.Printf("Error in OptionModel.AttachedToExperiment(%s): %v\n", id, err)
 		return nil, err
 	}
 
@@ -55,7 +55,7 @@ func (o OptionModel) AttachedToExperiment(id string) ([]Option, error) {
 
 		err := rows.Scan(&option.Id, &option.Value)
 		if err != nil {
-			log.Println("Error in OptionModel.AttachedToExperiment(%d): %v", id, err)
+			log.Printf("Error in OptionModel.AttachedToExperiment(%s): %v\n", id, err)
 			return nil, err
 		}
 
@@ -63,30 +63,4 @@ func (o OptionModel) AttachedToExperiment(id string) ([]Option, error) {
 	}
 
 	return options, nil
-}
-
-func (o OptionModel) Setup() error {
-	_, err := o.DB.Exec(`
-		DROP TABLE IF EXISTS Option;
-		CREATE TABLE Option (
-			id				INTEGER PRIMARY KEY AUTOINCREMENT,
-			experiment_id	INTEGER NOT NULL,
-			value			VARCHAR(128) NOT NULL,
-			FOREIGN KEY (experiment_id)
-				REFERENCES Experiment(id)
-				ON DELETE CASCADE
-		);
-	`)
-	if err != nil {
-		return err
-	}
-
-	_, err = o.DB.Exec(`
-		INSERT INTO Option (experiment_id, value) VALUES ('1', 'Two Blind Mice'), ('1', 'CBD Dumplings'), ('1', 'Asian Cafe')
-	`)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

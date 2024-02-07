@@ -58,27 +58,27 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 		err := rows.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return []Experiment{}, err
 		}
 
 		options, err := e.OptionModel.AttachedToExperiment(experiment.Id)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return []Experiment{}, err
 		}
 		experiment.Options = options
 
 		participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return []Experiment{}, err
 		}
 		experiment.Participants = participants
 
 		organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return []Experiment{}, err
 		}
 		experiment.Organiser = organiser
 
@@ -86,7 +86,7 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return []Experiment{}, err
 	}
 
 	return experiments, nil
@@ -132,27 +132,4 @@ func (e ExperimentModel) One(id string) (Experiment, error) {
 	experiment.Votes = votes
 
 	return experiment, nil
-}
-
-func (e ExperimentModel) Setup() error {
-	_, err := e.DB.Exec(`
-		DROP TABLE IF EXISTS Experiment;
-		CREATE TABLE Experiment (
-			id				INTEGER PRIMARY KEY AUTOINCREMENT,
-			prompt			VARCHAR(128) NOT NULL,
-			organiserId		INTEGER NOT NULL
-		);
-	`)
-	if err != nil {
-		return err
-	}
-
-	_, err = e.DB.Exec(`
-		INSERT INTO Experiment (prompt, organiserId) VALUES('Where do you want to go to dinner?', '1')
-	`)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -52,30 +52,3 @@ func (p ParticipantModel) AttachedToExperiment(id string) ([]Participant, error)
 
 	return participants, nil
 }
-
-func (p ParticipantModel) Setup() error {
-	_, err := p.DB.Exec(`
-		DROP TABLE IF EXISTS Participant;
-		CREATE TABLE Participant (
-			id				INTEGER PRIMARY KEY AUTOINCREMENT,
-			experiment_id	INTEGER NOT NULL,
-			name			VARCHAR(128) NOT NULL,
-			email			VARCHAR(128) NOT NULL,
-			FOREIGN KEY (experiment_id)
-				REFERENCES Experiment(id)
-				ON DELETE CASCADE
-		);
-	`)
-	if err != nil {
-		return err
-	}
-
-	_, err = p.DB.Exec(`
-		INSERT INTO Participant (experiment_id, name, email) VALUES ('1', 'Jimmy Smits', 'jimmy@smits.com'), ('1', 'Jane Doe', 'jane@doe.com'), ('1', 'Mephisto the Cat', 'evilgrin@alice.com')
-	`)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
