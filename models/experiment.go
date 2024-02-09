@@ -46,7 +46,7 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 	rows, err := e.DB.Query("SELECT id, prompt, organiserId FROM Experiment")
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return []Experiment{}, err
 	}
 	defer rows.Close()
 
@@ -93,43 +93,71 @@ func (e ExperimentModel) All() ([]Experiment, error) {
 }
 
 func (e ExperimentModel) One(id string) (Experiment, error) {
-	row := e.DB.QueryRow(`SELECT id, prompt, organiserId FROM Experiment WHERE id = ?`, id)
+	rows, err := e.DB.Query(
+		`SELECT Experiment.id, Experiment.prompt, Experiment.organiserId, Option.id, Option.value
+		FROM Experiment
+		LEFT JOIN Option
+		ON Experiment.id = Option.experiment_id
+		WHERE Experiment.id = ?`,
+		id,
+	)
+	defer rows.Close()
+	if err != nil {
+		log.Println(err)
+		return Experiment{}, err
+	}
 
 	var experiment Experiment
 
-	err := row.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId)
-	if err != nil {
-		log.Println(err)
-		return Experiment{}, err
-	}
+	for rows.Next() {
+		var option Option
 
-	options, err := e.OptionModel.AttachedToExperiment(experiment.Id)
-	if err != nil {
-		log.Println(err)
-		return Experiment{}, err
-	}
-	experiment.Options = options
+		err := rows.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId, &option.Id, &option.Value)
+		if err != nil {
+			log.Println(err)
+			return Experiment{}, err
+		}
 
-	participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
-	if err != nil {
-		log.Println(err)
+		experiment.Options = append(experiment.Options, option)
+	}
+	if err = rows.Err(); err != nil {
 		return Experiment{}, err
 	}
-	experiment.Participants = participants
-
-	organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
-	if err != nil {
-		log.Println(err)
-		return Experiment{}, err
-	}
-	experiment.Organiser = organiser
-
-	votes, err := e.VoteModel.AttachedToExperiment(experiment.Id)
-	if err != nil {
-		log.Println(err)
-		return Experiment{}, err
-	}
-	experiment.Votes = votes
 
 	return experiment, nil
+
+	// err := row.Scan(&experiment.Id, &experiment.Prompt, &experiment.OrganiserId)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return Experiment{}, err
+	// }
+
+	// options, err := e.OptionModel.AttachedToExperiment(experiment.Id)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return Experiment{}, err
+	// }
+	// experiment.Options = options
+
+	// participants, err := e.ParticipantModel.AttachedToExperiment(experiment.Id)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return Experiment{}, err
+	// }
+	// experiment.Participants = participants
+
+	// organiser, err := e.ParticipantModel.One(experiment.OrganiserId)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return Experiment{}, err
+	// }
+	// experiment.Organiser = organiser
+
+	// votes, err := e.VoteModel.AttachedToExperiment(experiment.Id)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return Experiment{}, err
+	// }
+	// experiment.Votes = votes
+
 }
