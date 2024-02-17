@@ -8,6 +8,7 @@ import (
 type Option struct {
 	Id    string
 	Value string
+	Votes int
 }
 
 type OptionModel struct {

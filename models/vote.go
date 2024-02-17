@@ -4,8 +4,11 @@ import (
 	"database/sql"
 )
 
+/**
+ * Vote models a many-to-many relationship between participants and the options that they're voting for
+ */
+
 type Vote struct {
-	ExperimentId string
 	OptionId     string
 	ParticpantId string
 }
@@ -14,13 +17,13 @@ type VoteModel struct {
 	DB *sql.DB
 }
 
-func (v VoteModel) VoteFor(exp_id int, opt_id int, par_id int) error {
-
+func (v VoteModel) VoteFor(experimentId, optionId, participantId int) error {
+	v.DB.Exec(`INSERT INTO Vote 
+		(experiment_id, option_id, participant_id)
+		VALUES (?, ?, ?)`,
+		experimentId,
+		optionId,
+		participantId,
+	)
 	return nil
-}
-
-func (v VoteModel) AttachedToExperiment(exp_id string) ([]Vote, error) {
-	var votes []Vote
-
-	return votes, nil
 }

@@ -1,12 +1,23 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
+type ContextKey string
+
+const ContextAuthKey ContextKey = "userId"
+const ContextJsonResponseKey ContextKey = "jsonResponse"
+
 func middlewareAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), ContextAuthKey, "1")
+		r = r.WithContext(ctx)
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -35,4 +46,15 @@ func middlewareLogger(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func sendJson(w http.ResponseWriter, r *http.Request) {
+	bytes, err := json.Marshal(r.Context().Value(ContextJsonResponseKey))
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(bytes)
 }

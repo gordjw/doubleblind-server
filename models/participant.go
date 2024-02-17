@@ -43,7 +43,7 @@ func (p ParticipantModel) AttachedToExperiment(id string) ([]Participant, error)
 
 		err := rows.Scan(&participant.Id, &participant.Name, &participant.Email)
 		if err != nil {
-			log.Println("Error in ParticipantModel.AttachedToExperiment(%s): %v", id, err)
+			log.Printf("Error in ParticipantModel.AttachedToExperiment(%s): %v\n", id, err)
 			return nil, err
 		}
 

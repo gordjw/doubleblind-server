@@ -51,7 +51,6 @@ func Run(host string, port int) {
 		DB:               db,
 		OptionModel:      &options,
 		ParticipantModel: &participants,
-		VoteModel:        &votes,
 	}
 
 	env := &Env{
@@ -85,11 +84,15 @@ func Run(host string, port int) {
 	apiRouter.Use(middlewareAuth)
 	apiRouter.Use(middlewareJSONResponse)
 
-	apiRouter.Get("/experiment", env.getExperiments)
-	apiRouter.Get("/experiment/{experiment_id}", env.getExperiment)
-	apiRouter.Post("/experiment", env.postExperiment)
+	apiRouter.Route("/experiment", func(apiRouter chi.Router) {
+		apiRouter.Get("/", env.getExperiments)
+		apiRouter.Post("/", env.postExperiment)
 
-	apiRouter.Post("/experiment/{experiment_id}/vote/{option_id}", env.postVote)
+		apiRouter.Route("/{experimentId}", func(apiRouter chi.Router) {
+			apiRouter.Get("/", env.getExperiment)
+			apiRouter.Post("/vote/{optionId}", env.postVote)
+		})
+	})
 
 	/**
 	 *  Setting up the Main Router and routes
