@@ -1,0 +1,10 @@
+{{define "optionList"}}
+    <div hx-ext="sse" sse-connect="" sse-swap="message">
+        {{$ExperimentId := .Id}}
+        {{range .Options}}
+            <div hx-post="/api/experiment/{{$ExperimentId}}/vote/{{.Id}}">{{.Value}} - {{.Votes}} votes</div>
+        {{end}}
+    </div>
+{{end}}
+
+{{template "optionList" .}}

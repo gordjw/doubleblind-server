@@ -1,0 +1,29 @@
+{{define "newExperimentForm"}}
+    <form hx-post="/api/experiment" hx-trigger="submit once">
+        <label class="block">
+            <span class="text-gray-700">What do you want to ask your friends?</span>
+            <input type="text" name="prompt" class="mt-1 block w-full">
+        </label>
+        <label class="block">
+            <span class="text-gray-700">Option 1</span>
+            <input type="text" name="option" class="mt-1 block w-full">
+        </label>
+
+        <label class="block">
+            <span class="text-gray-700">Option 2</span>
+            <input type="text" name="option" class="mt-1 block w-full">
+        </label>
+
+        <label class="block">
+            <span class="text-gray-700">Option 3</span>
+            <input type="text" name="option" class="mt-1 block w-full">
+        </label>
+
+        <label class="block">
+            <span class="text-gray-700">Option 4</span>
+            <input type="text" name="option" class="mt-1 block w-full">
+        </label>
+
+        <button class="rounded bg-sky-700 text-white px-8 py-4 shadow-lg">Send it</button>
+    </form>
+{{end}}

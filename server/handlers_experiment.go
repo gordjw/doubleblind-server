@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"doubleblind/models"
-	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/gorilla/schema"
 )
 
 func (env *Env) getExperiments(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,6 @@ func (env *Env) getExperiments(w http.ResponseWriter, r *http.Request) {
 }
 
 func (env *Env) getExperiment(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(chi.URLParam(r, "experimentId"))
 	experimentId := chi.URLParam(r, "experimentId")
 	experiment, err := env.experiments.One(experimentId)
 	if err != nil {
@@ -32,32 +32,40 @@ func (env *Env) getExperiment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	ctx := context.WithValue(r.Context(), ContextJsonResponseKey, experiment)
-	r = r.WithContext(ctx)
-	sendJson(w, r)
+	templatePaths := []string{
+		"templates/components/option_list.html",
+	}
+
+	tmpl := template.Must(template.ParseFiles(templatePaths...))
+	err = tmpl.Execute(w, experiment)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (env *Env) postExperiment(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
-	fmt.Println(r.Body)
-
-	organiserId := 1
-
-	var e models.Experiment
-
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-
-	err := decoder.Decode(&e)
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	env.experiments.Add(e.Prompt, organiserId, e.Options)
+	organiserId := 1
+
+	var experiment models.Experiment
+
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&experiment, r.PostForm)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	env.experiments.Add(experiment.Prompt, organiserId, experiment.Options)
 
 	fmt.Fprint(w, fmt.Sprintf("Created new experiment\n"))
-	fmt.Fprintf(w, "Experiment: %+v\n", e)
+	fmt.Fprintf(w, "Experiment: %+v\n", experiment)
 	fmt.Println("Created new experiment")
 }

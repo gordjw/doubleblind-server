@@ -1,0 +1,10 @@
+{{define "experimentList"}}
+
+    {{range .}}
+        <div class="rounded shadow-lg p-8 flex align-items justify-between">
+            <p>{{.Prompt}}</p>
+            <button hx-get="/api/experiment/{{.Id}}">Check it out</button>
+        </div>
+    {{end}}
+
+{{end}}

@@ -9,7 +9,7 @@ require doubleblind/server v0.0.0-00010101000000-000000000000
 require (
 	doubleblind/models v0.0.0-00010101000000-000000000000 // indirect
 	github.com/go-chi/chi v1.5.5 // indirect
-	github.com/go-chi/chi/v5 v5.0.11 // indirect
+	github.com/gorilla/schema v1.2.1 // indirect
 	github.com/ncruces/go-sqlite3 v0.12.0 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/tetratelabs/wazero v1.6.0 // indirect

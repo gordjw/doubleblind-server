@@ -82,7 +82,8 @@ func Run(host string, port int) {
 	 */
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(middlewareAuth)
-	apiRouter.Use(middlewareJSONResponse)
+	// apiRouter.Use(middlewareJSONResponse)
+	apiRouter.Use(middlewareHTMLResponse)
 
 	apiRouter.Route("/experiment", func(apiRouter chi.Router) {
 		apiRouter.Get("/", env.getExperiments)
@@ -102,6 +103,10 @@ func Run(host string, port int) {
 	r.Use(middlewareLogger)
 
 	r.Mount("/api", apiRouter)
+
+	r.Get("/", env.getIndex)
+
+	// r.Handle("/", http.FileServer(http.Dir("./client")))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), r))
 }

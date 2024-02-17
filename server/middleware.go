@@ -40,6 +40,14 @@ func middlewareJSONResponse(next http.Handler) http.Handler {
 	})
 }
 
+func middlewareHTMLResponse(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func middlewareLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("req: %s\n", r.RequestURI)
