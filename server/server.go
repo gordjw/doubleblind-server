@@ -101,8 +101,6 @@ func Run(host string, port int) {
 	r.Use(middlewareCORS)
 	r.Use(middlewareLogger)
 
-	r.Handle("/", http.FileServer(http.Dir("./public")))
-
 	r.Mount("/api", apiRouter)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), r))
