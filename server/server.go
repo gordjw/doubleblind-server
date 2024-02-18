@@ -136,9 +136,11 @@ func Run(host string, port int) {
 			}
 			message := b.String()
 
-			fmt.Printf("event: message\ndata: %s\n\n", message)
+			eventName := fmt.Sprintf("vote-%s", data.Id)
+
+			fmt.Printf("event: %s\ndata: %s\n\n", eventName, message)
 			for _, w := range env.clients {
-				fmt.Fprintf(w, "event: message\ndata: %s\n\n", message)
+				fmt.Fprintf(w, "event: %s\ndata: %s\n\n", eventName, message)
 				w.(http.Flusher).Flush()
 			}
 

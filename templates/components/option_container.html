@@ -1,5 +1,6 @@
 {{- define "optionContainer" -}}
-    <div hx-ext="sse" sse-connect="/api/sse" sse-swap="message" hx-swap="innerHTML">
+    {{- $ExperimentId := .Id -}}
+    <div hx-ext="sse" sse-connect="/api/sse" sse-swap="vote-{{- $ExperimentId -}}" hx-swap="innerHTML">
         {{- template "optionList" . -}}
     </div>
 {{- end -}}

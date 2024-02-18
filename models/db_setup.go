@@ -14,7 +14,7 @@ func (e ExperimentModel) Setup() error {
 	}
 
 	_, err = e.DB.Exec(`
-		INSERT INTO Experiment (prompt, organiserId) VALUES('Where do you want to go to dinner?', '1')
+		INSERT INTO Experiment (prompt, organiserId) VALUES('Where do you want to go to dinner?', '1'), ('What is your favourite colour?', '1')
 	`)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (o OptionModel) Setup() error {
 	}
 
 	_, err = o.DB.Exec(`
-		INSERT INTO Option (experiment_id, value) VALUES ('1', 'Two Blind Mice'), ('1', 'CBD Dumplings'), ('1', 'Asian Cafe')
+		INSERT INTO Option (experiment_id, value) VALUES ('1', 'Two Blind Mice'), ('1', 'CBD Dumplings'), ('1', 'Asian Cafe'), ('2', 'Red'), ('2', 'Green'), ('2', 'Blue')
 	`)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (v VoteModel) Setup() error {
 	}
 
 	_, err = v.DB.Exec(`
-		INSERT INTO Vote (experiment_id, option_id, participant_id) VALUES ('1', '1', '1'), ('1', '1', '2'), ('1', '3', '3')
+		INSERT INTO Vote (experiment_id, option_id, participant_id) VALUES ('1', '1', '1'), ('1', '1', '2'), ('1', '3', '3'), ('2', '1', '1')
 	`)
 	if err != nil {
 		return err

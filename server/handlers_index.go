@@ -14,6 +14,10 @@ func (env *Env) getIndex(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
+	for _, e := range experiments {
+		fmt.Println(e.Prompt)
+	}
+
 	templatePaths := []string{
 		"templates/index.html",
 		"templates/components/experiment_list.html",
