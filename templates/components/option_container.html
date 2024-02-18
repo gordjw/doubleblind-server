@@ -1,0 +1,7 @@
+{{- define "optionContainer" -}}
+    <div hx-ext="sse" sse-connect="/api/sse" sse-swap="message" hx-swap="innerHTML">
+        {{- template "optionList" . -}}
+    </div>
+{{- end -}}
+
+{{- template "optionContainer" . -}}

@@ -1,10 +1,12 @@
 package server
 
 import (
+	"bytes"
 	"database/sql"
 	"doubleblind/models"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +21,8 @@ type Env struct {
 	options      models.OptionModel
 	participants models.ParticipantModel
 	votes        models.VoteModel
+	dataCh       chan models.Experiment
+	clients      []http.ResponseWriter
 }
 
 func Run(host string, port int) {
@@ -53,11 +57,16 @@ func Run(host string, port int) {
 		ParticipantModel: &participants,
 	}
 
+	dataCh := make(chan models.Experiment)
+	clients := []http.ResponseWriter{}
+
 	env := &Env{
 		experiments:  experiments,
 		options:      options,
 		participants: participants,
 		votes:        votes,
+		dataCh:       dataCh,
+		clients:      clients,
 	}
 
 	err = env.experiments.Setup()
@@ -95,6 +104,10 @@ func Run(host string, port int) {
 		})
 	})
 
+	apiRouter.Route("/sse", func(apiRouter chi.Router) {
+		apiRouter.Get("/", env.getSSE)
+	})
+
 	/**
 	 *  Setting up the Main Router and routes
 	 */
@@ -106,7 +119,32 @@ func Run(host string, port int) {
 
 	r.Get("/", env.getIndex)
 
-	// r.Handle("/", http.FileServer(http.Dir("./client")))
+	// Start a new goroutine to distribute data to clients
+	go func() {
+		templatePaths := []string{
+			"templates/components/option_list.html",
+		}
+
+		tmpl := template.Must(template.ParseFiles(templatePaths...))
+
+		for data := range env.dataCh {
+			var b bytes.Buffer
+
+			err = tmpl.Execute(&b, data)
+			if err != nil {
+				fmt.Println(err)
+			}
+			message := b.String()
+
+			fmt.Printf("event: message\ndata: %s\n\n", message)
+			for _, w := range env.clients {
+				fmt.Fprintf(w, "event: message\ndata: %s\n\n", message)
+				w.(http.Flusher).Flush()
+			}
+
+			fmt.Printf("Sent message to %d clients\n", len(env.clients))
+		}
+	}()
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), r))
 }

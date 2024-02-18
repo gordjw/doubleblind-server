@@ -33,6 +33,7 @@ func (env *Env) getExperiment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templatePaths := []string{
+		"templates/components/option_container.html",
 		"templates/components/option_list.html",
 	}
 
