@@ -1,9 +1,9 @@
 {{define "experimentList"}}
 
     {{range .}}
-        <div class="rounded shadow-lg p-8 flex align-items justify-between">
-            <p>{{.Prompt}}</p>
-            <button hx-get="/api/experiment/{{.Id}}" hx-swap="outerHTML">Check it out</button>
+        <div class="rounded shadow-lg p-8 flex align-items justify-between" id="experiment-{{.Id}}">
+            {{- template "experiment" . -}}
+            <button hx-get="/api/experiments/{{.Id}}" hx-swap="outerHTML">Check it out</button>
         </div>
     {{end}}
 

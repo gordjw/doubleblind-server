@@ -69,11 +69,11 @@ func (e ExperimentModel) One(id string) (Experiment, error) {
 		WHERE Experiment.id = ?
 		GROUP BY Option.id, Vote.option_id`, id,
 	)
-	defer rows.Close()
 	if err != nil {
 		fmt.Println(err)
 		return Experiment{}, err
 	}
+	defer rows.Close()
 
 	var experiment Experiment
 	experiment.Options = make(map[string]Option)
@@ -113,6 +113,7 @@ func (e ExperimentModel) Add(prompt string, organiserId int, options map[string]
 		fmt.Println(err)
 		return err
 	}
+	defer rows.Close()
 
 	var experimentId int
 	for rows.Next() {
@@ -135,6 +136,38 @@ func (e ExperimentModel) Add(prompt string, organiserId int, options map[string]
 			fmt.Println(err)
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (e ExperimentModel) Update(experimentId, prompt string) error {
+	_, err := e.DB.Exec(`
+		UPDATE Experiment
+		SET prompt = ?
+		WHERE Experiment.id = ?
+	`,
+		prompt,
+		experimentId,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func (e ExperimentModel) Delete(experimentId string) error {
+	_, err := e.DB.Exec(`
+		DELETE FROM Experiment
+		WHERE Experiment.id = ?
+	`,
+		experimentId,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return err
 	}
 
 	return nil

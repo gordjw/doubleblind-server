@@ -1,7 +1,7 @@
 {{- define "optionList" -}}
     {{- $ExperimentId := .Id -}}
     {{- range .Options -}}
-        <div hx-post="/api/experiment/{{$ExperimentId}}/vote/{{.Id}}">{{.Value}} - {{.Votes}} votes</div>
+        <div hx-post="/api/experiments/{{$ExperimentId}}/vote/{{.Id}}">{{.Value}} - {{.Votes}} votes</div>
     {{- end -}}
 {{- end -}}
 

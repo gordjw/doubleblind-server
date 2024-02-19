@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"strings"
+
+	"github.com/go-chi/chi"
 )
 
 type ContextKey string
@@ -56,13 +57,12 @@ func middlewareLogger(next http.Handler) http.Handler {
 	})
 }
 
-func sendJson(w http.ResponseWriter, r *http.Request) {
-	bytes, err := json.Marshal(r.Context().Value(ContextJsonResponseKey))
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+func TrackRoute(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		rctx := chi.RouteContext(r.Context())
+		fmt.Println(rctx.RoutePatterns)
+		routePattern := strings.Join(rctx.RoutePatterns, "")
+		fmt.Println("route:", routePattern)
+	})
 }

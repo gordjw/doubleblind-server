@@ -1,10 +1,8 @@
 package server
 
 import (
-	"context"
 	"doubleblind/models"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 
@@ -12,16 +10,14 @@ import (
 	"github.com/gorilla/schema"
 )
 
-func (env *Env) getExperiments(w http.ResponseWriter, r *http.Request) {
+func (env *Env) getAllExperiments(w http.ResponseWriter, r *http.Request) {
 	experiments, err := env.experiments.All()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	ctx := context.WithValue(r.Context(), ContextJsonResponseKey, experiments)
-	r = r.WithContext(ctx)
-	sendJson(w, r)
+	env.responder(w, r, experiments)
 }
 
 func (env *Env) getExperiment(w http.ResponseWriter, r *http.Request) {
@@ -32,16 +28,7 @@ func (env *Env) getExperiment(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	templatePaths := []string{
-		"templates/components/option_container.html",
-		"templates/components/option_list.html",
-	}
-
-	tmpl := template.Must(template.ParseFiles(templatePaths...))
-	err = tmpl.Execute(w, experiment)
-	if err != nil {
-		fmt.Println(err)
-	}
+	env.responder(w, r, experiment)
 }
 
 func (env *Env) postExperiment(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +53,33 @@ func (env *Env) postExperiment(w http.ResponseWriter, r *http.Request) {
 
 	env.experiments.Add(experiment.Prompt, organiserId, experiment.Options)
 
-	fmt.Fprint(w, fmt.Sprintf("Created new experiment\n"))
-	fmt.Fprintf(w, "Experiment: %+v\n", experiment)
-	fmt.Println("Created new experiment")
+	env.responder(w, r, experiment)
+}
+
+func (env *Env) patchExperiment(w http.ResponseWriter, r *http.Request) {
+	experimentId := chi.URLParam(r, "experimentId")
+	prompt := "I'm a new question"
+	experiment := models.Experiment{
+		Id:     experimentId,
+		Prompt: prompt,
+	}
+	err := env.experiments.Update(experimentId, prompt)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	env.responder(w, r, experiment)
+}
+
+func (env *Env) deleteExperiment(w http.ResponseWriter, r *http.Request) {
+	experimentId := chi.URLParam(r, "experimentId")
+
+	err := env.experiments.Delete(experimentId)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	env.responder(w, r, nil)
 }
