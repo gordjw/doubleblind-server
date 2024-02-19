@@ -1,6 +1,5 @@
 {{- define "experiment" -}}
     <p hx-patch="/api/experiments/{{.Id}}" hx-swap="innerHTML">{{.Prompt}}</p>
-    <p hx-delete="/api/experiments/{{.Id}}" hx-target="#experiment-{{.Id}}" hx-swap="outerHTML">Delete</p>
 {{- end -}}
 
 {{- template "experiment" . -}}

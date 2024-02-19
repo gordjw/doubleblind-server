@@ -11,12 +11,12 @@ import (
 
 type ContextKey string
 
-const ContextAuthKey ContextKey = "userId"
+const ContextKeyAuthToken ContextKey = "authToken"
 const ContextJsonResponseKey ContextKey = "jsonResponse"
 
 func middlewareAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), ContextAuthKey, "1")
+		ctx := context.WithValue(r.Context(), ContextKeyAuthToken, "1")
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

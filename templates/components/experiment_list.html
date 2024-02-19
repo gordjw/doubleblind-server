@@ -3,6 +3,7 @@
     {{range .}}
         <div class="rounded shadow-lg p-8 flex align-items justify-between" id="experiment-{{.Id}}">
             {{- template "experiment" . -}}
+            <p hx-delete="/api/experiments/{{.Id}}" hx-target="#experiment-{{.Id}}" hx-swap="outerHTML">Delete</p>
             <button hx-get="/api/experiments/{{.Id}}" hx-swap="outerHTML">Check it out</button>
         </div>
     {{end}}

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/joho/godotenv"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 )
@@ -22,12 +23,20 @@ type Env struct {
 	options       models.OptionModel
 	participants  models.ParticipantModel
 	votes         models.VoteModel
+	users         models.UserModel
+	sessions      map[string]string
 	dataCh        chan models.Experiment
 	clients       []http.ResponseWriter
 	templatePaths map[string]map[string][]string
 }
 
 func Run(host string, port int) {
+	// Load .env
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s", err)
+	}
+
 	// Logger setup
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
@@ -53,6 +62,10 @@ func Run(host string, port int) {
 		DB: db,
 	}
 
+	users := models.UserModel{
+		DB: db,
+	}
+
 	experiments := models.ExperimentModel{
 		DB:               db,
 		OptionModel:      &options,
@@ -61,6 +74,7 @@ func Run(host string, port int) {
 
 	dataCh := make(chan models.Experiment)
 	clients := []http.ResponseWriter{}
+	sessions := make(map[string]string)
 	templatePaths := map[string]map[string][]string{
 		"/": {
 			"GET": {
@@ -70,6 +84,11 @@ func Run(host string, port int) {
 				"templates/partials/header.html",
 				"templates/partials/navigation.html",
 				"templates/partials/footer.html",
+			},
+		},
+		"/foo/": {
+			"GET": {
+				"templates/foo.html",
 			},
 		},
 		"/api/*/experiments/*": {
@@ -95,6 +114,8 @@ func Run(host string, port int) {
 		options:       options,
 		participants:  participants,
 		votes:         votes,
+		users:         users,
+		sessions:      sessions,
 		dataCh:        dataCh,
 		clients:       clients,
 		templatePaths: templatePaths,
@@ -135,7 +156,11 @@ func (env *Env) clientBroker() {
 }
 
 func (env *Env) populateDB() {
-	err := env.experiments.Setup()
+	err := env.users.Setup()
+	if err != nil {
+		log.Fatal("Error setting up DB: ", err)
+	}
+	err = env.experiments.Setup()
 	if err != nil {
 		log.Fatal("Error setting up DB: ", err)
 	}

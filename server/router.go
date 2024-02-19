@@ -1,6 +1,10 @@
 package server
 
-import "github.com/go-chi/chi"
+import (
+	"context"
+
+	"github.com/go-chi/chi"
+)
 
 type Router struct {
 	Router *chi.Mux
@@ -38,18 +42,34 @@ func (env *Env) NewRouter() Router {
 		apiRouter.Get("/", env.getSSE) // Register a client for SSE updates
 	})
 
+	fooRouter := chi.NewRouter()
+	fooRouter.Use(env.middlewareOauth)
+	fooRouter.Use(middlewareHTMLResponse)
+	fooRouter.Get("/", env.getProtectedFoo)
+
 	/**
 	 *  Setting up the Main Router and routes
 	 */
 	r := chi.NewRouter()
 	r.Use(middlewareCORS)
 	r.Use(middlewareLogger)
-
 	r.Mount("/api", apiRouter)
+	r.Mount("/foo", fooRouter)
 
 	r.Get("/", env.getIndex)
+	r.Get("/auth/google/login", env.oauthGoogleLogin)
+	r.Get("/auth/google/callback", env.oauthGoogleCallback)
 
 	return Router{
 		Router: r,
 	}
+}
+
+func setAuthToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, ContextKeyAuthToken, token)
+}
+
+func getAuthToken(ctx context.Context) (string, bool) {
+	tokenStr, ok := ctx.Value(ContextKeyAuthToken).(string)
+	return tokenStr, ok
 }

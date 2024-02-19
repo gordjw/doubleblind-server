@@ -108,3 +108,27 @@ func (v VoteModel) Setup() error {
 
 	return nil
 }
+
+func (u UserModel) Setup() error {
+	_, err := u.DB.Exec(`
+		DROP TABLE IF EXISTS User;
+		CREATE TABLE User (
+			id				INTEGER PRIMARY KEY AUTOINCREMENT,
+			oauth_id		VARCHAR(128) NOT NULL,
+			oauth_provider	VARCHAR(128) NOT NULL,
+			email			VARCHAR(128) NOT NULL
+		);
+	`)
+	if err != nil {
+		return err
+	}
+
+	// _, err = u.DB.Exec(`
+	// 	INSERT INTO Participant (experiment_id, name, email) VALUES ('1', 'Jimmy Smits', 'jimmy@smits.com'), ('1', 'Jane Doe', 'jane@doe.com'), ('1', 'Mephisto the Cat', 'evilgrin@alice.com')
+	// `)
+	// if err != nil {
+	// 	return err
+	// }
+
+	return nil
+}
